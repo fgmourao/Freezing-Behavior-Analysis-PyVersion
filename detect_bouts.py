@@ -49,7 +49,7 @@ AUTHOR
     Federal University of Minas Gerais - Brazil
 
 Started:     12/2023
-Last update: 02/2026
+Last update: 03/2026
 """
 
 import numpy as np
@@ -78,9 +78,8 @@ def detect_bouts(binary_signal, min_dur_samples, sample_rate):
         Returns np.zeros((3, 0)) if no qualifying bouts are found.
     """
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  1. Input Guard
-    # =========================================================================
 
     # Return empty result immediately if signal is empty or contains no active samples
     if len(binary_signal) == 0 or not np.any(binary_signal):
@@ -90,9 +89,8 @@ def detect_bouts(binary_signal, min_dur_samples, sample_rate):
     sig = np.asarray(binary_signal).flatten() > 0
 
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  2. Edge Detection
-    # =========================================================================
 
     # Pad with False on both sides so that bouts starting at index 0
     # or ending at the last sample are detected as proper rising/falling edges.
@@ -106,9 +104,8 @@ def detect_bouts(binary_signal, min_dur_samples, sample_rate):
     durations = ends - starts + 1
 
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  3. Minimum Duration Filter
-    # =========================================================================
 
     keep = durations >= min_dur_samples
 

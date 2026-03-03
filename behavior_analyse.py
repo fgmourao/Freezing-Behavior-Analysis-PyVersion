@@ -80,7 +80,7 @@ AUTHOR
     Federal University of Minas Gerais - Brazil
 
 Started:     12/2023
-Last update: 02/2026
+Last update: 03/2026
 """
 
 import warnings
@@ -88,9 +88,8 @@ import numpy as np
 from detect_bouts import detect_bouts
 
 
-# =============================================================================
+# ---------------------------------------------------------------
 #  Helper: get_nf_pairs
-# =============================================================================
 
 def get_nf_pairs(f_pairs, ep_start, ep_end, min_dur):
     """
@@ -150,9 +149,8 @@ def get_nf_pairs(f_pairs, ep_start, ep_end, min_dur):
     return nf_raw[valid]
 
 
-# =============================================================================
+# ---------------------------------------------------------------
 #  Main Function: behavior_analyse
-# =============================================================================
 
 def behavior_analyse(raw_signal, params):
     """
@@ -160,9 +158,8 @@ def behavior_analyse(raw_signal, params):
     See module docstring for full input/output specification.
     """
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  1. Input Handling & Normalisation
-    # =========================================================================
 
     raw_signal = np.asarray(raw_signal, dtype=float)
 
@@ -184,9 +181,8 @@ def behavior_analyse(raw_signal, params):
     raw_signal = 100 * (raw_signal - min_vals) / range_vals
 
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  2. Parameters & Epoch Boundaries
-    # =========================================================================
 
     min_samples = int(np.round(P['thr_dur'] * P['fs']))
 
@@ -212,9 +208,8 @@ def behavior_analyse(raw_signal, params):
     n_epochs     = len(epoch_bounds)
 
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  3. Global Freeze Detection (per subject)
-    # =========================================================================
 
     # Build a binary freeze mask for the entire session (M-by-S boolean array).
     # Samples at or below thr_low are classified as frozen.
@@ -229,9 +224,8 @@ def behavior_analyse(raw_signal, params):
         all_freezing_bouts.append(bouts)
 
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  4. Output Pre-allocation
-    # =========================================================================
 
     # behavior_freezing index layout (per epoch):
     #   [0]  Raw bout durations      (list of arrays, one per subject)
@@ -250,13 +244,12 @@ def behavior_analyse(raw_signal, params):
     }
 
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  5. Per-Epoch Processing Loop
-    # =========================================================================
 
     for i in range(n_epochs):
 
-        # --- Epoch boundaries and duration -----------------------------------
+        # Epoch boundaries and duration
         start_sample = epoch_bounds[i, 0]
         end_sample   = epoch_bounds[i, 1]
         epoch_len_s  = (end_sample - start_sample + 1) / P['fs']
@@ -264,7 +257,7 @@ def behavior_analyse(raw_signal, params):
         # Store the normalised signal segment for all subjects (S-by-M)
         data['behavior_epochs'][i] = raw_signal[start_sample:end_sample + 1, :].T
 
-        # --- Per-subject accumulators ----------------------------------------
+        # Per-subject accumulators
         bf_raw_dur = []                       # raw bout durations (s) per subject
         bf_mean    = np.zeros(num_subjects)   # mean bout duration (s)
         bf_num     = np.zeros(num_subjects)   # number of bouts
@@ -276,7 +269,7 @@ def behavior_analyse(raw_signal, params):
         bnf_dur = []                          # non-freeze durations (s) per subject
         ev_idx  = [[None, None, None] for _ in range(num_subjects)]
 
-        # --- Inner loop: process each subject --------------------------------
+        # Inner loop: process each subject
         for s in range(num_subjects):
 
             subj_f_bouts   = all_freezing_bouts[s]
@@ -386,7 +379,7 @@ def behavior_analyse(raw_signal, params):
             else:
                 bnf_dur.append(np.array([]))
 
-        # --- Store epoch-level results ---------------------------------------
+        # Store epoch-level results
         data['behavior_freezing'][i][0] = bf_raw_dur
         data['behavior_freezing'][i][1] = bf_mean
         data['behavior_freezing'][i][2] = bf_num
@@ -399,9 +392,8 @@ def behavior_analyse(raw_signal, params):
         data['events_behavior_idx'][i][0]  = ev_idx
 
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  6. Block Analysis (Optional)
-    # =========================================================================
     #
     #  Groups consecutive events that share a common prefix into blocks of
     #  size N, then computes per-block aggregates across subjects.

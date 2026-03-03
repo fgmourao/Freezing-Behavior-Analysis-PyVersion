@@ -41,7 +41,7 @@ AUTHOR
     Federal University of Minas Gerais - Brazil
 
 Started:     12/2023
-Last update: 02/2026
+Last update: 03/2026
 """
 
 import sys
@@ -81,9 +81,9 @@ class AppBehavior(QMainWindow):
         self.init_ui()
 
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  UI Construction
-    # =========================================================================
+
 
     def init_ui(self):
         """Build the main window layout and all panels."""
@@ -240,9 +240,8 @@ class AppBehavior(QMainWindow):
         parent_layout.addWidget(group_box)
 
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  Callbacks
-    # =========================================================================
 
     def load_files(self):
         """Select one or more raw data files and store their paths."""
@@ -312,7 +311,7 @@ class AppBehavior(QMainWindow):
         QApplication.processEvents()
 
         try:
-            # --- Collect basic parameters --------------------------------
+            # Collect basic parameters
             P = {
                 'fs':             float(self.edt_fs.text()),
                 'thr_low':        float(self.edt_thr.text()),
@@ -327,7 +326,7 @@ class AppBehavior(QMainWindow):
                 val = edt.text().strip()
                 P['block_sizes'].append(float(val) if val else np.nan)
 
-            # --- Parse events table --------------------------------------
+            # Parse events table
             # Keep only rows with a non-empty label and valid numeric onset/offset
             events_sec  = []
             event_names = []
@@ -356,7 +355,7 @@ class AppBehavior(QMainWindow):
             P['event_names'] = event_names
             self.app_data['P'] = P
 
-            # --- Process each file ---------------------------------------
+            # Process each file
             data_results = {}
 
             for i, f_name in enumerate(self.app_data['file_names']):
@@ -396,7 +395,7 @@ class AppBehavior(QMainWindow):
 
             self.app_data['data_results'] = data_results
 
-            # --- Update UI after successful analysis ---------------------
+            # Update UI after successful analysis
             valid_fields = [k for k in data_results if k != 'parameters']
             self.dd_files.clear()
             self.dd_files.addItems(valid_fields)
@@ -661,9 +660,8 @@ class AppBehavior(QMainWindow):
             self.lbl_status.setStyleSheet("color: red; font-weight: bold;")
 
 
-# =============================================================================
+# ---------------------------------------------------------------
 #  Entry Point
-# =============================================================================
 
 if __name__ == '__main__':
     # Guard against re-creating a QApplication instance when running inside

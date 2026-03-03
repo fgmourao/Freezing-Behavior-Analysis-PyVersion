@@ -38,7 +38,7 @@ AUTHOR
     Federal University of Minas Gerais - Brazil
 
 Started:     12/2023
-Last update: 02/2026
+Last update: 03/2026
 """
 
 import os
@@ -50,9 +50,8 @@ from matplotlib.patches import Patch
 from scipy.ndimage      import uniform_filter1d
 
 
-# =============================================================================
+# ---------------------------------------------------------------
 #  Helper: _plot_pie
-# =============================================================================
 
 def _plot_pie(ax, values, labels, title):
     """
@@ -85,9 +84,8 @@ def _plot_pie(ax, values, labels, title):
         ax.axis('off')
 
 
-# =============================================================================
+# ---------------------------------------------------------------
 #  Main Function: plot_behavior_batch
-# =============================================================================
 
 def plot_behavior_batch(data_results):
     """
@@ -99,9 +97,8 @@ def plot_behavior_batch(data_results):
         Must contain a 'parameters' key and one additional key per file.
     """
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  1. Validate Input and Extract Shared Parameters
-    # =========================================================================
 
     if 'parameters' not in data_results:
         raise ValueError("'parameters' key not found in data_results.")
@@ -113,16 +110,15 @@ def plot_behavior_batch(data_results):
     desktop_path = os.path.expanduser("~/Desktop")
 
 
-    # =========================================================================
+    # ---------------------------------------------------------------
     #  2. Per-File Plotting Loop
-    # =========================================================================
 
     for f_name in file_names:
 
         data = data_results[f_name]
         print(f"Plotting and saving {f_name}...")
 
-        # --- Shared signal data ------------------------------------------
+        # Shared signal data
 
         # behavior_epochs[0] contains the full-session signal (S-by-M)
         raw_matrix              = data['behavior_epochs'][0]
@@ -146,7 +142,7 @@ def plot_behavior_batch(data_results):
         else:
             ev_on_s = ev_off_s = []
 
-        # --- Dynamic figure height ---------------------------------------
+        # Dynamic figure height
         # Base layout has 2 rows; each block analysis adds one additional row.
         blocks          = data.get('blocks', []) or []
         num_block_types = len(blocks)
@@ -164,9 +160,8 @@ def plot_behavior_batch(data_results):
         gs = GridSpec(total_rows, 5, figure=fig, hspace=0.7, wspace=0.4)
 
 
-        # =====================================================================
+        # ---------------------------------------------------------------
         #  Row 0: Full-Session Movement Trace + Freeze Raster
-        # =====================================================================
         #
         #  The top panel spans all 5 subplot columns and shows:
         #    - Individual smoothed traces (light grey)
@@ -241,9 +236,8 @@ def plot_behavior_batch(data_results):
         )
 
 
-        # =====================================================================
+        # ---------------------------------------------------------------
         #  Row 1: Event-by-Event Freeze % + Summary Pie Charts
-        # =====================================================================
         #
         #  Left panel (cols 0-1): individual + mean±SEM line plot per epoch.
         #  Right panels (cols 2-4): pie charts for total bouts, mean duration,
@@ -254,7 +248,7 @@ def plot_behavior_batch(data_results):
 
         if num_events > 0:
 
-            # --- Line plot: freeze % per epoch ---------------------------
+            # Line plot: freeze % per epoch
             ax2 = fig.add_subplot(gs[1, 0:2])
 
             freeze_matrix = np.zeros((num_subjects, num_events))
@@ -317,9 +311,8 @@ def plot_behavior_batch(data_results):
             _plot_pie(ax5, np.nan_to_num(mean_dt_sum), x_labels, 'Mean Delta T (All)')
 
 
-        # =====================================================================
+        # ---------------------------------------------------------------
         #  Rows 2+: Dynamic Block Analysis Rows
-        # =====================================================================
         #
         #  One row is added per active block definition.
         #  Each row follows the same 5-column pattern as Row 1:
@@ -338,7 +331,7 @@ def plot_behavior_batch(data_results):
             num_b  = len(block['labels'])
             x_vals = np.arange(num_b)
 
-            # --- Line plot: block freeze % -------------------------------
+            # Line plot: block freeze
             ax_L = fig.add_subplot(gs[r, 0:2])
 
             # Individual subject lines (loop avoids 2-D broadcast issue)
@@ -368,7 +361,7 @@ def plot_behavior_batch(data_results):
             ax_L.spines['top'].set_visible(False)
             ax_L.spines['right'].set_visible(False)
             
-            # --- Pie charts: total bouts, mean duration, mean Delta T ----
+            # Pie charts: total bouts, mean duration, mean Delta T 
             ax_P1 = fig.add_subplot(gs[r, 2])
             b_sum = np.sum(block['bout'], axis=0)
             _plot_pie(ax_P1, b_sum, block['labels'], f"Total Bouts ({block['prefix']})")
@@ -386,9 +379,8 @@ def plot_behavior_batch(data_results):
                       f"Mean Delta T ({block['prefix']})")
 
 
-        # =====================================================================
+        # ---------------------------------------------------------------
         #  Export Figure
-        # =====================================================================
 
         out_filename = os.path.join(desktop_path, f"{f_name}_Plot.png")
         plt.savefig(out_filename, dpi=300, bbox_inches='tight')
