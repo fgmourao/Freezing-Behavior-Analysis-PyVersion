@@ -21,7 +21,7 @@ The pipeline runs either interactively through a GUI (`app_behavior.py`) or prog
 ├── detect_bouts.py         Low-level bout detection from a binary signal
 ├── plot_behavior_batch.py  Figure generation and export
 └── BehaviorSync.py         Standalone GUI for synchronized video / neural
-                            visualization and behavioral event extraction
+                            visualization and manual behavioral event extraction
 ```
 
 ---
