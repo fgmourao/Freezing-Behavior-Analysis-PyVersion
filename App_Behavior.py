@@ -1,15 +1,15 @@
 """
-app_behavior.py
+app_behavior.py - GUI Control Center for the Behavior Analysis Pipeline
 
-DESCRIPTION
+DESCRIPTION:
     Graphical User Interface (GUI) control center for the behavior analysis
     pipeline. Provides interactive panels for loading data, configuring
-    parameters, running analysis, and exporting results.
-
+    parameters, running analysis, and exporting results — without requiring
+    Qt Designer or .ui files.
     All UI state is managed through the 'app_data' dictionary, which is
     accessible by all methods of the AppBehavior class.
 
-LAYOUT
+LAYOUT:
     Panel 1 (top-left)   - Basic Parameters (fs, threshold, duration, baseline)
     Panel 2 (top-right)  - Block Analysis definitions (up to 5 prefix/size pairs)
     Panel 3 (middle)     - Events table (editable; loadable from CSV/TXT)
@@ -17,28 +17,66 @@ LAYOUT
     Status bar           - Color-coded feedback label
     Run button           - Triggers the full analysis pipeline
     Menu > File          - Load data, export Excel, save .pkl, save timestamps
+    Menu > Tools         - Launch BehaviorSync — standalone GUI for video /
+                           neural visualization and behavioral event extraction
 
-WORKFLOW
-    1. Load one or more raw data files via File menu.
+WORKFLOW:
+    1. Load one or more raw data files via the File menu.
     2. Fill or load the events table (Name, Onset_s, Offset_s).
+       * Tip: Use Tools > Open BehaviorSync to visually extract these events
+              from video recordings.
     3. Set basic and block parameters in the panels.
     4. Click RUN ANALYSIS.
     5. Use the Plot Viewer or File menu to export results.
 
-OUTPUTS (via File menu after analysis)
-    <file>_Results.xlsx     - Freeze metrics per epoch per subject
-    <file>_Timestamps.xlsx  - Freeze / non-freeze onset-offset pairs
-    Behavior_Results.pkl    - Full data_results dict (pickle format)
+OUTPUTS (via File menu after analysis):
+    <file>_Results.xlsx      - Freeze metrics per epoch per subject
+    <file>_Timestamps.xlsx   - Freeze / non-freeze onset-offset pairs
+    Behavior_Results.pkl     - Full data_results dict (pickle format)
 
-REQUIRES
-    behavior_analyse.py, plot_behavior_batch.py
-    PyQt5, numpy, pandas, openpyxl, pickle
+    BehaviorSync output (via Tools menu)  [under construction]
+    <file>_events.csv        - Behavioral events extracted from video through
+                               visual inspection, containing:
+                               Row 1  : Metadata (video fps, neural Fs, behavior Fs)
+                               Columns: Frame onset | Frame offset |
+                                        Onset (s) | Offset (s) | Duration (s)
+                               * Exported Onset/Offset times can be loaded
+                                 directly into Panel 3.
 
-AUTHOR
-    Flavio Mourao (mourao.fg@gmail.com)
-    Texas A&M University - Department of Psychological and Brain Sciences
-    University of Illinois Urbana-Champaign - Beckman Institute
-    Federal University of Minas Gerais - Brazil
+KNOWN LIMITATIONS:
+    - If the behavioral or neural recording does not start at the same
+      real-world time as the video, a manual Time Offset (s) field will be
+      required for precise alignment. This feature is under development.
+
+NOTE:
+    BehaviorSync is still under active development.
+    Synchronization of signals with different start times will be addressed
+    in future versions.
+
+REQUIRES:
+    Internal modules : behavior_analyse.py, plot_behavior_batch.py,
+                       BehaviorSync.py
+
+    External packages: Install via pip (recommended: use a virtual environment)
+
+        pip install numpy pandas openpyxl PyQt5
+
+    Pinned versions (for reproducibility):
+
+        numpy>=1.26.0,<2.0.0
+        pandas
+        openpyxl
+        PyQt5
+
+    Or install all at once from the requirements file:
+
+        pip install -r requirements.txt
+
+AUTHOR:
+    Flavio Mourao  (mourao.fg@gmail.com)
+    Texas A&M University     - Department of Psychological and Brain Sciences
+    Beckman Institute / UIUC - University of Illinois Urbana-Champaign
+    Federal University of Minas Gerais (UFMG) - Brazil
 
 Started:     12/2023
 Last update: 03/2026
@@ -78,6 +116,9 @@ class AppBehavior(QMainWindow):
             'P':            {}
         }
 
+        # BehaviorSync memory lock
+        self.bs_window = None
+
         self.init_ui()
 
 
@@ -103,8 +144,10 @@ class AppBehavior(QMainWindow):
         self.create_plot_viewer_panel(main_layout)
 
     def create_menu(self):
-        """Create the File menu with load, export, save, and timestamp actions."""
+        """Create the File and Tools menus."""
         menubar   = self.menuBar()
+        
+        # --- Menu File ---
         file_menu = menubar.addMenu('File')
 
         load_action = file_menu.addAction('1. Load Data Files (.out, .csv)')
@@ -122,6 +165,12 @@ class AppBehavior(QMainWindow):
         self.save_ts_action = file_menu.addAction('4. Export freeze timestamps (.xls)')
         self.save_ts_action.setEnabled(False)
         self.save_ts_action.triggered.connect(self.save_timestamps)
+
+        # --- Menu Tools ---
+        tools_menu = menubar.addMenu('Tools')
+        
+        behavior_sync_action = tools_menu.addAction('BehaviorSync Interface')
+        behavior_sync_action.triggered.connect(self.launch_behavior_sync)
 
     def create_basic_parameters_panel(self, parent_layout):
         """Basic Parameters panel: sampling rate, threshold, duration, baseline."""
@@ -242,6 +291,29 @@ class AppBehavior(QMainWindow):
 
     # ---------------------------------------------------------------
     #  Callbacks
+
+    def launch_behavior_sync(self):
+        """Instantiates and shows the BehaviorSync interface."""
+        try:
+            # Importa localmente para evitar carregamento circular ou desnecessário
+            from BehaviorSync import BehaviorSync
+            
+            # Se a janela já existe e está fechada, podemos recriá-la ou apenas mostrá-la
+            if self.bs_window is None or not self.bs_window.isVisible():
+                self.bs_window = BehaviorSync()
+                self.bs_window.show()
+            else:
+                # Traz para frente se já estiver aberta
+                self.bs_window.raise_()
+                self.bs_window.activateWindow()
+                
+        except ImportError as e:
+            QMessageBox.critical(
+                self, "Import Error", 
+                f"Could not load BehaviorSync.\nMake sure 'BehaviorSync.py' is in the same folder as this script.\n\nDetails: {str(e)}"
+            )
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred while launching BehaviorSync:\n{str(e)}")
 
     def load_files(self):
         """Select one or more raw data files and store their paths."""

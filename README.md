@@ -8,7 +8,7 @@ A Python pipeline for automated detection and quantification of freezing behavio
 
 This pipeline processes raw movement signals recorded during fear conditioning or related behavioral paradigms. Each session is segmented into user-defined epochs (baseline, CS, ITI, or any custom event), and freezing bouts are detected within each epoch using a threshold-and-duration criterion. All detection is performed globally on the full session first and then mapped to individual epochs, ensuring that bout identities are consistent across the entire recording.
 
-The pipeline runs either interactively through a GUI (`App_Behavior.py`) or programmatically by calling `behavior_analyse` directly, making it suitable for both exploratory use and automated processing of large datasets.
+The pipeline runs either interactively through a GUI (`app_behavior.py`) or programmatically by calling `behavior_analyse` directly, making it suitable for both exploratory use and automated processing of large datasets. An auxiliary tool, `BehaviorSync.py`, provides synchronized video and signal visualization for manual event extraction.
 
 ---
 
@@ -16,10 +16,12 @@ The pipeline runs either interactively through a GUI (`App_Behavior.py`) or prog
 
 ```
 .
-├── App_Behavior.py         GUI control center for the full pipeline
+├── app_behavior.py         GUI control center for the full pipeline
 ├── behavior_analyse.py     Core analysis function (multi-subject, block analysis)
 ├── detect_bouts.py         Low-level bout detection from a binary signal
-└── plot_behavior_batch.py  Figure generation and export
+├── plot_behavior_batch.py  Figure generation and export
+└── BehaviorSync.py         Standalone GUI for synchronized video / neural
+                            visualization and behavioral event extraction
 ```
 
 ---
@@ -30,32 +32,47 @@ The pipeline runs either interactively through a GUI (`App_Behavior.py`) or prog
 
 | Library | Version | Purpose |
 |---|---|---|
-| `numpy` | ≥ 1.21 | Array operations, signal processing |
+| `numpy` | ≥ 1.26, < 2.0 | Array operations, signal processing |
 | `pandas` | ≥ 1.3 | Excel export, events file loading |
 | `matplotlib` | ≥ 3.4 | Figure generation and export |
 | `scipy` | ≥ 1.7 | Signal smoothing (`uniform_filter1d`) |
 | `openpyxl` | ≥ 3.0 | Writing `.xlsx` files |
 | `PyQt5` | ≥ 5.15 | Graphical user interface |
+| `pyqtgraph` | ≥ 0.13 | Real-time signal plots (BehaviorSync) |
+| `opencv-python` | < 4.10 | Video decoding and frame display (BehaviorSync) |
 
 ### Installation
 
 It is recommended to use a dedicated virtual environment or conda environment.
 
-**Using pip:**
+**Using pip (recommended):**
 
 ```bash
-pip install numpy pandas matplotlib scipy openpyxl PyQt5
+pip install "numpy>=1.26,<2.0" pandas matplotlib scipy openpyxl PyQt5 pyqtgraph "opencv-python<4.10"
+```
+
+Or install all dependencies at once from the requirements file:
+
+```bash
+pip install -r requirements.txt
 ```
 
 **Using conda:**
 
 ```bash
-conda install numpy pandas matplotlib scipy openpyxl pyqt
+conda install "numpy>=1.26,<2.0" pandas matplotlib scipy openpyxl pyqt
+pip install pyqtgraph "opencv-python<4.10"
 ```
 
-### Inter-file Dependency
+> **Note:** `pyqtgraph` and `opencv-python` are only required if you intend to use `BehaviorSync.py`. The core analysis pipeline (`app_behavior.py`, `behavior_analyse.py`) runs without them.
 
-`detect_bouts.py` must be importable from the same directory as `behavior_analyse.py`, or present on the Python path. No other cross-file dependencies exist.
+### Inter-file Dependencies
+
+All files must reside in the same directory (or be present on the Python path):
+
+- `detect_bouts.py` is required by `behavior_analyse.py`.
+- `behavior_analyse.py` and `plot_behavior_batch.py` are required by `app_behavior.py`.
+- `BehaviorSync.py` is launched as a standalone window from **Tools > BehaviorSync Interface** inside `app_behavior.py`, and can also be run independently.
 
 Tested on Python 3.9 and later.
 
@@ -66,14 +83,30 @@ Tested on Python 3.9 and later.
 ### Interactive Mode (GUI)
 
 ```bash
-python App_Behavior.py
+python app_behavior.py
 ```
 
 1. Use **File > Load Data Files** to select one or more raw movement files (`.out`, `.txt`, or `.csv`).
 2. Load or manually fill the Events table (columns: Event Label, Onset in seconds, Offset in seconds).
+   - *Tip: Use **Tools > BehaviorSync Interface** to visually extract onset/offset times directly from a video recording.*
 3. Set basic parameters (sampling rate, freeze threshold, minimum duration, baseline duration) and up to five block grouping definitions.
 4. Click **RUN ANALYSIS**.
 5. Use **File > Export Results** or the **Plot Viewer** panel to inspect and export results.
+
+### BehaviorSync (Video + Signal Visualization)
+
+```bash
+python BehaviorSync.py
+```
+
+Or launch from within the main GUI via **Tools > BehaviorSync Interface**.
+
+1. Set Fs (Hz) for each recording **before** loading the file.
+2. Load Video → Load Neural → Load Behavior (order is flexible).
+3. Use Play/Pause or arrow keys to navigate the video.
+4. Mark Onset **[I]** and Offset **[O]** at the desired frames.
+5. Export timestamps via **File > Export Behavior Timestamps (.csv)**.
+6. Load the exported `.csv` directly into the Events table of `app_behavior.py`.
 
 ### Standalone Analysis
 
@@ -121,6 +154,10 @@ Each data file should be a numeric matrix where:
 Accepted formats: `.out`, `.txt`, `.csv`. The parser handles comma, semicolon, or space delimiters automatically and skips any non-numeric header lines.
 
 When calling `behavior_analyse` directly, pass a NumPy array of shape `(M, S)` where M is the number of samples and S is the number of subjects. One-dimensional arrays are accepted and reshaped to `(M, 1)` internally.
+
+### Neural and Behavioral Recordings (BehaviorSync)
+
+Each file must contain one experimental subject. The last column is always used as the signal, making the format robust to files with non-numeric leading columns. If two columns are present, the first is treated as the time series; otherwise, time is reconstructed automatically from the user-supplied sampling frequency (Fs). Accepted formats: `.csv`, `.txt`.
 
 ### Events File
 
@@ -227,6 +264,10 @@ One set of four sheets per active block definition, named using the format `Blk<
 ### Timestamp Export
 
 A separate workbook (`<file>_Timestamps.xlsx`) contains the raw onset and offset sample indices for every freeze and non-freeze bout across all subjects. Each subject occupies two columns (Onset and Offset), using 0-based global sample indices. This file is suitable for cross-referencing with other simultaneously recorded signals.
+
+### BehaviorSync Timestamp Export
+
+`BehaviorSync.py` exports a separate `.csv` file (`<file>_events.csv`) containing behavioral events extracted through visual inspection of the video. The file includes a metadata header (video fps, neural Fs, behavior Fs) and the following columns: Frame onset | Frame offset | Onset (s) | Offset (s) | Duration (s). The exported onset/offset times in seconds can be loaded directly into the Events table of `app_behavior.py`.
 
 ### Pickle Export
 
