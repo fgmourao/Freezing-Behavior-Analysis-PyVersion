@@ -8,7 +8,7 @@ A Python pipeline for automated detection and quantification of freezing behavio
 
 This pipeline processes raw movement signals recorded during fear conditioning or related behavioral paradigms. Each session is segmented into user-defined epochs (baseline, CS, ITI, or any custom event), and freezing bouts are detected within each epoch using a threshold-and-duration criterion. All detection is performed globally on the full session first and then mapped to individual epochs, ensuring that bout identities are consistent across the entire recording.
 
-The pipeline runs either interactively through a GUI (`app_behavior.py`) or programmatically by calling `behavior_analyse` directly, making it suitable for both exploratory use and automated processing of large datasets. An auxiliary tool, `BehaviorSync.py`, provides synchronized video and signal visualization for manual event extraction.
+The pipeline runs either interactively through a GUI (`app_behavior.py`) or programmatically by calling `behavior_analyse` directly, making it suitable for both exploratory use and automated processing of large datasets. An auxiliary tool, `BehaviorSync.py` is a companion standalone GUI for video-synchronized event annotation. It can be launched from within `app_Behavior.py` main menu or independently.
 
 ---
 
@@ -21,7 +21,7 @@ The pipeline runs either interactively through a GUI (`app_behavior.py`) or prog
 ├── detect_bouts.py         Low-level bout detection from a binary signal
 ├── plot_behavior_batch.py  Figure generation and export
 └── BehaviorSync.py         Standalone GUI for synchronized video / neural
-                            visualization and manual behavioral event extraction
+                            synchronization and manual behavioral event extraction
 ```
 
 ---
@@ -103,10 +103,10 @@ Or launch from within the main GUI via **Tools > BehaviorSync Interface**.
 
 1. Set Fs (Hz) for each recording **before** loading the file.
 2. Load Video → Load Neural → Load Behavior (order is flexible).
-3. Use Play/Pause or arrow keys to navigate the video.
-4. Mark Onset **[I]** and Offset **[O]** at the desired frames.
+3. Use Play/Pause [Space bar] or arrow keys to navigate the video.
+4. Mark Onset **[I]** and Offset **[O]** or (M] 2x for both at the desired frames.
 5. Export timestamps via **File > Export Behavior Timestamps (.csv)**.
-6. Load the exported `.csv` directly into the Events table of `app_behavior.py`.
+6. Use **File > Export Results** 
 
 ### Standalone Analysis
 
