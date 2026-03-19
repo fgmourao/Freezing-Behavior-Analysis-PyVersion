@@ -202,7 +202,7 @@ def behavior_analyse(raw_signal, params):
         events_idx = np.round(np.array(P['events_sec']) * P['fs']).astype(int)
         P['events_idx'] = events_idx
         for ev in events_idx:
-            epoch_bounds.append([ev[0], ev[1]])
+            epoch_bounds.append([ev[0], ev[1] - 1])
 
     epoch_bounds = np.array(epoch_bounds)
     n_epochs     = len(epoch_bounds)
